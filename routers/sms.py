@@ -56,8 +56,8 @@ async def handle_inbound_sms(request: Request):
         
         client = client_result.data[0]
         
-        # Check message limit (default 300 messages/month = ~$3.50/user with phone rental)
-        msg_limit = client.get("message_limit", 300)
+        # Check message limit (default 1000 messages/month = ~$8.90/user with phone rental)
+        msg_limit = client.get("message_limit", 1000)
         msg_used = client.get("messages_used_this_month", 0)
         
         # Update message count immediately
@@ -105,11 +105,11 @@ async def handle_inbound_sms(request: Request):
         
         elif intent == "BILLING":
             msg_used = new_msg_count  # Use updated count
-            msg_limit = client.get("message_limit", 200)
+            msg_limit = client.get("message_limit", 1000)
             used = client.get("claims_used_this_month", 0)
             remaining = max(0, 50 - used)
             overage = max(0, used - 50)
-            msg = f"📊 Your usage this month:\n\n{used}/50 claims used\n{msg_used}/{msg_limit} messages\n\n{remaining} claims remaining"
+            msg = f"📊 Your usage this month:\n\n{used}/50 claims\n{msg_used}/1000 messages\n\n{remaining} claims remaining"
             if overage > 0:
                 msg += f"\n{overage} overage claims (${overage * 75} billed)"
             await send_sms(from_number, to_number, msg)
