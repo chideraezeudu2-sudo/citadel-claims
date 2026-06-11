@@ -25,14 +25,23 @@ What do you need?"""
 
 @router.post("/webhook/sms")
 async def handle_inbound_sms(request: Request):
-    """Handle inbound SMS from Plivo"""
-    payload = await request.json()
-    
+    """Handle inbound SMS from Twilio"""
     try:
-        # Plivo format
-        from_number = payload.get("from", "")
-        to_number = payload.get("to", "")
-        body = payload.get("text", "").strip()
+        # Twilio sends form data, not JSON
+        form_data = await request.form()
+        payload = dict(form_data)
+        
+        from_number = payload.get("From", "")
+        to_number = payload.get("To", "")
+        body = payload.get("Body", "").strip()
+        num_media = int(payload.get("NumMedia", 0))
+        
+        # Get media URLs if any
+        media_urls = []
+        for i in range(num_media):
+            media_url = payload.get(f"MediaUrl{i}", "")
+            if media_url:
+                media_urls.append(media_url)
         
         # Look up client by their assigned number
         client_result = supabase.table("clients").select("*").eq("telnyx_number", to_number).execute()
