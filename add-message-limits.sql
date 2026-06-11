@@ -2,7 +2,7 @@
 -- Run this in Supabase → SQL Editor
 
 ALTER TABLE clients 
-ADD COLUMN IF NOT EXISTS message_limit INTEGER DEFAULT 200,
+ADD COLUMN IF NOT EXISTS message_limit INTEGER DEFAULT 300,
 ADD COLUMN IF NOT EXISTS messages_used_this_month INTEGER DEFAULT 0;
 
 -- Verify the columns were added

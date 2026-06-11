@@ -56,8 +56,8 @@ async def handle_inbound_sms(request: Request):
         
         client = client_result.data[0]
         
-        # Check message limit (default 200 messages/month)
-        msg_limit = client.get("message_limit", 200)
+        # Check message limit (default 300 messages/month = ~$3.50/user with phone rental)
+        msg_limit = client.get("message_limit", 300)
         msg_used = client.get("messages_used_this_month", 0)
         
         # Update message count immediately
