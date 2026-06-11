@@ -25,7 +25,7 @@ What do you need?"""
 
 @router.post("/webhook/sms")
 async def handle_inbound_sms(request: Request):
-    """Handle inbound SMS from Twilio"""
+    """Handle inbound SMS from Twilio with message limit enforcement"""
     try:
         # Twilio sends form data, not JSON
         form_data = await request.form()
@@ -47,9 +47,8 @@ async def handle_inbound_sms(request: Request):
         client_result = supabase.table("clients").select("*").eq("telnyx_number", to_number).execute()
         
         if not client_result.data:
-            # Try looking up by from_number (in case they text us directly)
             client_result = supabase.table("clients").select("*").eq("phone", from_number).execute()
-        
+
         if not client_result.data:
             await send_sms(from_number, to_number, 
                 "Hi! This number is for Citadel Claims clients. Visit our site to get started.")
@@ -57,12 +56,28 @@ async def handle_inbound_sms(request: Request):
         
         client = client_result.data[0]
         
+        # Check message limit (default 200 messages/month)
+        msg_limit = client.get("message_limit", 200)
+        msg_used = client.get("messages_used_this_month", 0)
+        
+        # Update message count immediately
+        new_msg_count = msg_used + 1
+        supabase.table("clients").update({
+            "messages_used_this_month": new_msg_count
+        }).eq("id", client["id"]).execute()
+        
+        # Check if over limit (allow 1 grace message for limit notification)
+        if new_msg_count > msg_limit and new_msg_count > msg_used + 1:
+            await send_sms(from_number, to_number,
+                f"⚠️ Message limit reached ({msg_used}/{msg_limit}).\n\nUpgrade or wait until next billing cycle.")
+            return {"status": "ok"}
+        
         # Log inbound message
         supabase.table("messages").insert({
             "client_id": client["id"],
             "direction": "inbound",
             "body": body,
-            "media_urls": []
+            "media_urls": media_urls
         }).execute()
         
         # Classify intent
@@ -89,10 +104,12 @@ async def handle_inbound_sms(request: Request):
                 await send_sms(from_number, to_number, "Your recent claims:\n\n" + "\n".join(status_lines))
         
         elif intent == "BILLING":
+            msg_used = new_msg_count  # Use updated count
+            msg_limit = client.get("message_limit", 200)
             used = client.get("claims_used_this_month", 0)
             remaining = max(0, 50 - used)
             overage = max(0, used - 50)
-            msg = f"📊 Your usage this month:\n\n{used}/50 claims used\n{remaining} claims remaining"
+            msg = f"📊 Your usage this month:\n\n{used}/50 claims used\n{msg_used}/{msg_limit} messages\n\n{remaining} claims remaining"
             if overage > 0:
                 msg += f"\n{overage} overage claims (${overage * 75} billed)"
             await send_sms(from_number, to_number, msg)
@@ -102,7 +119,6 @@ async def handle_inbound_sms(request: Request):
                 "To cancel your Citadel Claims subscription, reply CONFIRM CANCEL and we'll process it within 24 hours. You'll keep access until the end of your billing period.")
         
         elif intent == "SUBMIT_CLAIM":
-            # For now, claims are text-only - photos would need to be uploaded via portal
             if not body:
                 await send_sms(from_number, to_number,
                     "To submit a claim, text a description of the damage (e.g. 'roof damage from storm'). You can also send photos via your portal link.")
