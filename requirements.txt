@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-dotenv
+supabase
+stripe
+telnyx
+groq
+google-genai
+weasyprint
+httpx
+python-multipart
+sendgrid
+Pillow
+aiofiles

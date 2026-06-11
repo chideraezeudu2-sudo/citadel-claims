@@ -1,0 +1,10 @@
+# Citadel Claims Backend
+.env
+*.pyc
+__pycache__/
+.venv/
+venv/
+*.log
+*.pdf
+.env.local
+.env.*.local

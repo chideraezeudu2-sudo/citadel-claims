@@ -1,0 +1,98 @@
+import os
+import stripe
+import httpx
+from fastapi import APIRouter, Request, HTTPException
+from utils.supabase_client import supabase
+from services.sms_sender import send_sms
+
+router = APIRouter()
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+
+
+async def assign_telnyx_number() -> str:
+    """Purchase and assign a Telnyx phone number"""
+    async with httpx.AsyncClient() as client:
+        # Search for available numbers
+        search_response = await client.get(
+            "https://api.telnyx.com/v2/available_phone_numbers",
+            headers={"Authorization": f"Bearer {os.getenv('TELNYX_API_KEY')}"},
+            params={"country_code": "US", "limit": 1, "features": ["sms"]}
+        )
+        numbers = search_response.json()["data"]
+        if not numbers:
+            raise Exception("No Telnyx numbers available")
+        
+        phone_number = numbers[0]["phone_number"]
+        
+        # Purchase the number
+        order_response = await client.post(
+            "https://api.telnyx.com/v2/number_orders",
+            headers={
+                "Authorization": f"Bearer {os.getenv('TELNYX_API_KEY')}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "phone_numbers": [{"phone_number": phone_number}],
+                "messaging_profile_id": os.getenv("TELNYX_MESSAGING_PROFILE_ID")
+            }
+        )
+        
+        return phone_number
+
+
+@router.post("/webhook/stripe")
+async def handle_stripe_webhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, os.getenv("STRIPE_WEBHOOK_SECRET")
+        )
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        customer_email = session.get("customer_details", {}).get("email", "")
+        customer_name = session.get("customer_details", {}).get("name", "")
+        stripe_customer_id = session.get("customer", "")
+        stripe_subscription_id = session.get("subscription", "")
+        client_phone = session.get("metadata", {}).get("phone", "")
+        
+        # Assign Telnyx number
+        telnyx_number = await assign_telnyx_number()
+        
+        # Create client in database
+        supabase.table("clients").insert({
+            "phone": client_phone,
+            "email": customer_email,
+            "name": customer_name,
+            "stripe_customer_id": stripe_customer_id,
+            "stripe_subscription_id": stripe_subscription_id,
+            "telnyx_number": telnyx_number,
+            "status": "active"
+        }).execute()
+        
+        # Send welcome SMS
+        await send_sms(
+            client_phone,
+            telnyx_number,
+            f"Welcome to Citadel Claims, {customer_name.split()[0] if customer_name else 'there'}! 🏛️\n\nThis is your dedicated claims line. Save this number.\n\nYou're on the $1,750/month plan — 50 claims included.\n\nText me anytime to submit a claim or ask anything. Ready when you are."
+        )
+    
+    elif event["type"] == "customer.subscription.deleted":
+        subscription_id = event["data"]["object"]["id"]
+        
+        client_result = supabase.table("clients").select("*").eq("stripe_subscription_id", subscription_id).execute()
+        if client_result.data:
+            client = client_result.data[0]
+            supabase.table("clients").update({"status": "cancelled"}).eq("id", client["id"]).execute()
+            
+            await send_sms(
+                client["phone"],
+                client["telnyx_number"],
+                "Your Citadel Claims subscription has been cancelled. Your estimates remain accessible via your portal link. We hope to work with you again."
+            )
+    
+    return {"status": "ok"}
