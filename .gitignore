@@ -8,3 +8,4 @@ venv/
 *.pdf
 .env.local
 .env.*.local
+*.egg-info/
