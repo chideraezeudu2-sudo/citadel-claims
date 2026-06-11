@@ -4,20 +4,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TELNYX_API_KEY = os.getenv("TELNYX_API_KEY")
+PLIVO_AUTH_ID = os.getenv("PLIVO_AUTH_ID")
+PLIVO_AUTH_TOKEN = os.getenv("PLIVO_AUTH_TOKEN")
 
 
 async def send_sms(to: str, from_number: str, message: str):
+    """Send SMS via Plivo"""
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "https://api.telnyx.com/v2/messages",
-            headers={
-                "Authorization": f"Bearer {TELNYX_API_KEY}",
-                "Content-Type": "application/json"
-            },
+            "https://api.plivo.com/v1/Account/{PLIVO_AUTH_ID}/Message/",
+            auth=(PLIVO_AUTH_ID, PLIVO_AUTH_TOKEN),
             json={
-                "from": from_number,
-                "to": to,
+                "src": from_number,
+                "dst": to,
                 "text": message
             }
         )

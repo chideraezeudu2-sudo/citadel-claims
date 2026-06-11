@@ -2,10 +2,9 @@ import os
 import httpx
 from google import genai
 from dotenv import load_dotenv
-from services.watchdog import log_usage
 
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 ESTIMATE_PROMPT = """
 You are a professional insurance claims estimator working for Citadel Claims.
@@ -64,7 +63,7 @@ async def transcribe_audio(audio_url: str) -> str:
             "mime_type": "audio/ogg",
             "data": audio_data
         })
-        response = client.models.generate_content(
+        response = gemini_client.models.generate_content(
             model="gemini-2.0-flash",
             contents=[
                 "Transcribe this voice note from an insurance adjuster accurately. Include all details mentioned.",
@@ -92,7 +91,7 @@ async def analyze_photos(photo_urls: list) -> list:
                 "mime_type": "image/jpeg",
                 "data": image_data
             })
-            response = client.models.generate_content(
+            response = gemini_client.models.generate_content(
                 model="gemini-2.0-flash",
                 contents=[
                     "You are an insurance damage assessor. Describe this photo in detail: what is damaged, the severity, the extent of damage, and what repair or replacement work would be needed. Be specific.",
@@ -120,11 +119,10 @@ async def draft_estimate(
         claim_type=claim_type or "General property claim"
     )
     
-    response = client.models.generate_content(
+    response = gemini_client.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt
     )
-    await log_usage("gemini", tokens=len(prompt.split()) + len(response.text.split()))
     return response.text
 
 

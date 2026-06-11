@@ -3,12 +3,11 @@ import json
 from groq import Groq
 from google import genai
 from dotenv import load_dotenv
-from services.watchdog import log_usage
 
 load_dotenv()
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 INTENT_PROMPT = """
 You are the intent classifier for Citadel Claims, an insurance estimating service.
@@ -39,19 +38,17 @@ async def classify_intent(message: str) -> dict:
             max_tokens=50
         )
         result = response.choices[0].message.content.strip()
-        await log_usage("groq", tokens=response.usage.total_tokens)
         return json.loads(result)
     except Exception as groq_error:
         print(f"Groq failed: {groq_error}. Falling back to Gemini.")
     
     # Fallback to Gemini
     try:
-        response = client.models.generate_content(
+        response = gemini_client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt
         )
         result = response.text.strip()
-        await log_usage("gemini", tokens=len(prompt.split()) + len(result.split()))
         return json.loads(result)
     except Exception as gemini_error:
         print(f"Gemini also failed: {gemini_error}")

@@ -9,35 +9,33 @@ router = APIRouter()
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 
-async def assign_telnyx_number() -> str:
-    """Purchase and assign a Telnyx phone number"""
+async def assign_plivo_number() -> str:
+    """Get an available Plivo phone number"""
     async with httpx.AsyncClient() as client:
-        # Search for available numbers
-        search_response = await client.get(
-            "https://api.telnyx.com/v2/available_phone_numbers",
-            headers={"Authorization": f"Bearer {os.getenv('TELNYX_API_KEY')}"},
-            params={"country_code": "US", "limit": 1, "features": ["sms"]}
-        )
-        numbers = search_response.json()["data"]
-        if not numbers:
-            raise Exception("No Telnyx numbers available")
-        
-        phone_number = numbers[0]["phone_number"]
-        
-        # Purchase the number
-        order_response = await client.post(
-            "https://api.telnyx.com/v2/number_orders",
-            headers={
-                "Authorization": f"Bearer {os.getenv('TELNYX_API_KEY')}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "phone_numbers": [{"phone_number": phone_number}],
-                "messaging_profile_id": os.getenv("TELNYX_MESSAGING_PROFILE_ID")
-            }
+        # List available numbers
+        response = await client.get(
+            f"https://api.plivo.com/v1/Account/{os.getenv('PLIVO_AUTH_ID')}/AvailableNumberGroup/",
+            auth=(os.getenv("PLIVO_AUTH_ID"), os.getenv("PLIVO_AUTH_TOKEN"))
         )
         
-        return phone_number
+        data = response.json()
+        if not data.get("objects"):
+            raise Exception("No available Plivo numbers")
+        
+        # Get a US number
+        for group in data["objects"]:
+            if group.get("country") == "US" and group.get("numbers"):
+                number = group["numbers"][0]["number"]
+                
+                # Rent the number
+                await client.post(
+                    f"https://api.plivo.com/v1/Account/{os.getenv('PLIVO_AUTH_ID')}/PhoneNumber/{number}/",
+                    auth=(os.getenv("PLIVO_AUTH_ID"), os.getenv("PLIVO_AUTH_TOKEN")),
+                    json={"app_id": os.getenv("PLIVO_APP_ID")}
+                )
+                return number
+        
+        raise Exception("No US numbers available")
 
 
 @router.post("/webhook/stripe")
@@ -60,8 +58,8 @@ async def handle_stripe_webhook(request: Request):
         stripe_subscription_id = session.get("subscription", "")
         client_phone = session.get("metadata", {}).get("phone", "")
         
-        # Assign Telnyx number
-        telnyx_number = await assign_telnyx_number()
+        # Assign Plivo number
+        plivo_number = await assign_plivo_number()
         
         # Create client in database
         supabase.table("clients").insert({
@@ -70,14 +68,14 @@ async def handle_stripe_webhook(request: Request):
             "name": customer_name,
             "stripe_customer_id": stripe_customer_id,
             "stripe_subscription_id": stripe_subscription_id,
-            "telnyx_number": telnyx_number,
+            "telnyx_number": plivo_number,  # Using same field, storing Plivo number
             "status": "active"
         }).execute()
         
         # Send welcome SMS
         await send_sms(
             client_phone,
-            telnyx_number,
+            plivo_number,
             f"Welcome to Citadel Claims, {customer_name.split()[0] if customer_name else 'there'}! 🏛️\n\nThis is your dedicated claims line. Save this number.\n\nYou're on the $1,750/month plan — 50 claims included.\n\nText me anytime to submit a claim or ask anything. Ready when you are."
         )
     

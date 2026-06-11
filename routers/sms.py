@@ -1,13 +1,11 @@
 import os
-import uuid
 import tempfile
-import httpx
 from fastapi import APIRouter, Request
 from utils.supabase_client import supabase
 from services.nlp import classify_intent
 from services.ai_pipeline import process_claim
 from services.pdf_generator import generate_pdf
-from services.storage import upload_media, upload_pdf
+from services.storage import upload_pdf
 from services.sms_sender import send_sms
 
 router = APIRouter()
@@ -27,25 +25,25 @@ What do you need?"""
 
 @router.post("/webhook/sms")
 async def handle_inbound_sms(request: Request):
+    """Handle inbound SMS from Plivo"""
     payload = await request.json()
     
     try:
-        event_type = payload.get("data", {}).get("event_type", "")
-        if event_type != "message.received":
-            return {"status": "ignored"}
+        # Plivo format
+        from_number = payload.get("from", "")
+        to_number = payload.get("to", "")
+        body = payload.get("text", "").strip()
         
-        msg_data = payload["data"]["payload"]
-        from_number = msg_data["from"]["phone_number"]
-        to_number = msg_data["to"][0]["phone_number"]
-        body = msg_data.get("text", "").strip()
-        media = msg_data.get("media", [])
+        # Look up client by their assigned number
+        client_result = supabase.table("clients").select("*").eq("telnyx_number", to_number).execute()
         
-        # Look up client
-        client_result = supabase.table("clients").select("*").eq("phone", from_number).execute()
+        if not client_result.data:
+            # Try looking up by from_number (in case they text us directly)
+            client_result = supabase.table("clients").select("*").eq("phone", from_number).execute()
         
         if not client_result.data:
             await send_sms(from_number, to_number, 
-                "Hi! This number is for Citadel Claims clients. Visit citadelclaims.com to get started.")
+                "Hi! This number is for Citadel Claims clients. Visit our site to get started.")
             return {"status": "ok"}
         
         client = client_result.data[0]
@@ -55,7 +53,7 @@ async def handle_inbound_sms(request: Request):
             "client_id": client["id"],
             "direction": "inbound",
             "body": body,
-            "media_urls": [m["url"] for m in media] if media else []
+            "media_urls": []
         }).execute()
         
         # Classify intent
@@ -95,16 +93,16 @@ async def handle_inbound_sms(request: Request):
                 "To cancel your Citadel Claims subscription, reply CONFIRM CANCEL and we'll process it within 24 hours. You'll keep access until the end of your billing period.")
         
         elif intent == "SUBMIT_CLAIM":
-            # Check if they have media attached
-            if not media and not body:
+            # For now, claims are text-only - photos would need to be uploaded via portal
+            if not body:
                 await send_sms(from_number, to_number,
-                    "To submit a claim, send:\n1. Photos of the damage\n2. A voice note describing what happened\n3. The claim type (e.g. 'roof damage', 'water loss')\n\nYou can send them all in one message or multiple messages.")
+                    "To submit a claim, text a description of the damage (e.g. 'roof damage from storm'). You can also send photos via your portal link.")
                 return {"status": "ok"}
             
             # Create claim record
             claim = supabase.table("claims").insert({
                 "client_id": client["id"],
-                "claim_type": body if body else "General claim",
+                "claim_type": body,
                 "status": "processing"
             }).execute().data[0]
             
@@ -114,34 +112,9 @@ async def handle_inbound_sms(request: Request):
             await send_sms(from_number, to_number,
                 f"✅ Got it! Claim {claim_id[:8].upper()} received.\n\nWe're processing your estimate now. You'll get your file within 24 hours (usually much faster).")
             
-            # Download and store media
-            voice_url = None
-            photo_urls = []
-            
-            for media_item in media:
-                url = media_item.get("url", "")
-                content_type = media_item.get("content_type", "")
-                
-                async with httpx.AsyncClient() as http_client:
-                    media_response = await http_client.get(url)
-                    media_bytes = media_response.content
-                
-                if "audio" in content_type:
-                    stored_url = await upload_media(media_bytes, f"voice_{claim_id}.ogg", "claim-media")
-                    voice_url = stored_url
-                elif "image" in content_type:
-                    stored_url = await upload_media(media_bytes, f"photo_{uuid.uuid4()}.jpg", "claim-media")
-                    photo_urls.append(stored_url)
-            
-            # Update claim with media URLs
-            supabase.table("claims").update({
-                "voice_note_url": voice_url,
-                "photo_urls": photo_urls
-            }).eq("id", claim_id).execute()
-            
-            # Run AI pipeline
+            # Run AI pipeline (without photos for now)
             estimate_text, transcript = await process_claim(
-                claim_id, voice_url, photo_urls, body
+                claim_id, None, [], body
             )
             
             # Generate PDF
