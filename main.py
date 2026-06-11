@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, HTMLResponse
 from routers import sms, stripe_webhooks, portal
 from dotenv import load_dotenv
 import os
@@ -24,7 +26,12 @@ app.include_router(portal.router)
 
 @app.get("/")
 async def root():
-    return {"status": "Citadel Claims API is running"}
+    return FileResponse("frontend/index.html")
+
+
+@app.get("/success")
+async def success():
+    return FileResponse("frontend/index.html")
 
 
 @app.get("/health")
@@ -44,8 +51,8 @@ async def create_checkout_session(request: Request):
         payment_method_types=["card"],
         mode="subscription",
         line_items=[{"price": os.getenv("STRIPE_PRICE_ID"), "quantity": 1}],
-        success_url=f"{os.getenv('PORTAL_BASE_URL')}/success?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{os.getenv('PORTAL_BASE_URL')}",
+        success_url=f"{os.getenv('BASE_URL')}/success?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{os.getenv('BASE_URL')}",
         metadata={"phone": phone},
         phone_number_collection={"enabled": True}
     )

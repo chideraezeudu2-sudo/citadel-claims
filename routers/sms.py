@@ -67,7 +67,7 @@ async def handle_inbound_sms(request: Request):
             await send_sms(from_number, to_number, HELP_MESSAGE)
         
         elif intent == "GET_PORTAL":
-            portal_url = f"{os.getenv('PORTAL_BASE_URL')}/portal/{client['portal_token']}"
+            portal_url = f"{os.getenv('BASE_URL')}/portal/{client['portal_token']}"
             await send_sms(from_number, to_number, 
                 f"Here's your Citadel Claims portal 🏛️\n\n{portal_url}\n\nBookmark this link — all your estimates and claim history are here.")
         
@@ -165,7 +165,7 @@ async def handle_inbound_sms(request: Request):
             }).eq("id", client["id"]).execute()
             
             # Send completion message with direct link
-            portal_url = f"{os.getenv('PORTAL_BASE_URL')}/portal/{client['portal_token']}"
+            portal_url = f"{os.getenv('BASE_URL')}/portal/{client['portal_token']}"
             await send_sms(from_number, to_number,
                 f"🏛️ Your estimate is ready!\n\nClaim: {claim_id[:8].upper()}\n\n📄 Download PDF:\n{pdf_url}\n\n📁 Full portal:\n{portal_url}\n\nReview and submit. Text us if anything needs revision — it's free.")
         

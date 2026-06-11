@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citadel Claims - Professional Insurance Estimating</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #1a3a5c;
+            --gold: #c9a84c;
+            --dark: #0d1f33;
+            --light: #f8f9fa;
+            --text: #333;
+            --text-light: #666;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            line-height: 1.6;
+            background: var(--light);
+        }
+        
+        /* Header */
+        header {
+            background: var(--primary);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .logo span {
+            color: var(--gold);
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+            color: white;
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .hero h1 span {
+            color: var(--gold);
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            color: rgba(255,255,255,0.8);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+        
+        /* CTA Button */
+        .cta-btn {
+            display: inline-block;
+            background: var(--gold);
+            color: var(--primary);
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(201, 168, 76, 0.3);
+        }
+        
+        /* Pricing */
+        .pricing {
+            padding: 4rem 2rem;
+            background: white;
+            text-align: center;
+        }
+        
+        .pricing h2 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 3rem;
+        }
+        
+        .pricing-card {
+            display: inline-block;
+            background: var(--light);
+            padding: 3rem;
+            border-radius: 16px;
+            border: 2px solid var(--primary);
+            max-width: 400px;
+        }
+        
+        .price {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .price span {
+            font-size: 1rem;
+            color: var(--text-light);
+        }
+        
+        .features {
+            list-style: none;
+            margin: 2rem 0;
+            text-align: left;
+        }
+        
+        .features li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .features li::before {
+            content: "✓";
+            color: var(--gold);
+            margin-right: 0.5rem;
+            font-weight: bold;
+        }
+        
+        /* How it Works */
+        .how-it-works {
+            padding: 4rem 2rem;
+            background: var(--primary);
+            color: white;
+        }
+        
+        .how-it-works h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+            font-size: 2rem;
+        }
+        
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .step {
+            text-align: center;
+            max-width: 250px;
+        }
+        
+        .step-num {
+            width: 60px;
+            height: 60px;
+            background: var(--gold);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 auto 1rem;
+        }
+        
+        /* Subscribe Form */
+        .subscribe {
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        
+        .subscribe h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .subscribe-form {
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .submit-btn {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .submit-btn:hover {
+            background: var(--dark);
+        }
+        
+        /* Portal Page */
+        .portal {
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .portal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        .usage-badge {
+            background: var(--primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .claims-list {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .claim-item {
+            padding: 1.5rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .claim-item:last-child {
+            border-bottom: none;
+        }
+        
+        .claim-type {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .claim-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-complete {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .claim-link {
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Success Page */
+        .success {
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2.5rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Error message */
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Landing Page -->
+    <div id="landing-page">
+        <header>
+            <div class="logo">CITADEL <span>CLAIMS</span></div>
+        </header>
+        
+        <section class="hero">
+            <h1>Insurance Estimates<br>via <span>SMS</span></h1>
+            <p>Text photos and voice notes. Get professional carrier-ready estimates back within hours. No apps, no logins.</p>
+            <a href="#subscribe" class="cta-btn">Get Started - $1,750/mo</a>
+        </section>
+        
+        <section class="pricing">
+            <h2>Simple, Transparent Pricing</h2>
+            <div class="pricing-card">
+                <div class="price">$1,750<span>/month</span></div>
+                <ul class="features">
+                    <li>50 claims per month included</li>
+                    <li>Unlimited AI-powered analysis</li>
+                    <li>Professional PDF estimates</li>
+                    <li>Dedicated SMS number</li>
+                    <li>Magic link client portal</li>
+                    <li>Same-day revisions</li>
+                    <li>Carrier-ready formatting</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="how-it-works">
+            <h2>How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <h3>Text Photos</h3>
+                    <p>Snap photos of damage and text them to your dedicated number</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <h3>Add Voice Note</h3>
+                    <p>Record a quick description of what happened</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <h3>Get Estimate</h3>
+                    <p>Receive a professional PDF estimate within hours</p>
+                </div>
+            </div>
+        </section>
+        
+        <section class="subscribe" id="subscribe">
+            <h2>Start Your Subscription</h2>
+            <p>You'll get your dedicated claims SMS number instantly</p>
+            <div class="subscribe-form">
+                <div id="subscribe-error" class="error hidden"></div>
+                <form id="checkout-form">
+                    <div class="form-group">
+                        <input type="text" name="name" placeholder="Your Name" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" name="email" placeholder="Email Address" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" name="phone" placeholder="Phone Number (for SMS)" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Subscribe Now</button>
+                </form>
+            </div>
+        </section>
+        
+        <footer>
+            <p>Citadel Claims — Professional Insurance Estimating Service</p>
+        </footer>
+    </div>
+    
+    <!-- Success Page -->
+    <div id="success-page" class="hidden">
+        <header>
+            <div class="logo">CITADEL <span>CLAIMS</span></div>
+        </header>
+        <section class="success">
+            <div class="success-icon">✓</div>
+            <h1>Welcome to Citadel Claims!</h1>
+            <p>Your subscription is active. Check your email for details.</p>
+            <p style="margin-top: 1rem;">You can now text your claims to your dedicated number.</p>
+        </section>
+        <footer>
+            <p>Questions? Text your dedicated Citadel Claims number anytime.</p>
+        </footer>
+    </div>
+    
+    <!-- Portal Page -->
+    <div id="portal-page" class="hidden">
+        <header>
+            <div class="logo">CITADEL <span>CLAIMS</span></div>
+        </header>
+        <div class="portal">
+            <div class="portal-header">
+                <div>
+                    <h1 id="portal-name">Client Portal</h1>
+                    <p id="portal-phone" style="color: #666;"></p>
+                </div>
+                <div class="usage-badge">
+                    <span id="claims-remaining">50</span> claims remaining
+                </div>
+            </div>
+            
+            <div id="claims-container">
+                <h3 style="margin-bottom: 1rem; color: var(--primary);">Your Claims</h3>
+                <div id="claims-list" class="claims-list">
+                    <!-- Claims will be loaded here -->
+                </div>
+            </div>
+            
+            <footer style="margin-top: 3rem; padding: 2rem 0;">
+                <p>Questions? Text your dedicated Citadel Claims number anytime.</p>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        // Check URL params for success
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('success') === 'true') {
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('success-page').classList.remove('hidden');
+        }
+        
+        // Check URL for portal token
+        const pathParts = window.location.pathname.split('/');
+        const token = pathParts[pathParts.length - 1];
+        if (token && token !== 'index.html' && !token.includes('?')) {
+            loadPortal(token);
+        }
+        
+        // Checkout form
+        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const errorDiv = document.getElementById('subscribe-error');
+            errorDiv.classList.add('hidden');
+            
+            const name = form.name.value;
+            const email = form.email.value;
+            const phone = form.phone.value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/create-checkout-session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone })
+                });
+                
+                const data = await response.json();
+                
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    errorDiv.textContent = data.detail || 'Something went wrong. Please try again.';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Connection error. Please check your internet and try again.';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+        
+        // Load portal data
+        async function loadPortal(token) {
+            try {
+                const response = await fetch(`${API_BASE}/portal/${token}`);
+                
+                if (!response.ok) {
+                    document.getElementById('landing-page').innerHTML = '<div class="success"><h1>Portal Not Found</h1><p>This link may be expired or invalid.</p></div>';
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                document.getElementById('landing-page').classList.add('hidden');
+                document.getElementById('portal-page').classList.remove('hidden');
+                
+                document.getElementById('portal-name').textContent = data.client_name || 'Client Portal';
+                document.getElementById('portal-phone').textContent = data.phone;
+                document.getElementById('claims-remaining').textContent = data.claims_remaining;
+                
+                const claimsList = document.getElementById('claims-list');
+                if (data.claims.length === 0) {
+                    claimsList.innerHTML = '<div class="claim-item">No claims yet. Text your dedicated number to get started!</div>';
+                } else {
+                    claimsList.innerHTML = data.claims.map(claim => `
+                        <div class="claim-item">
+                            <div>
+                                <div class="claim-type">${claim.claim_type}</div>
+                                <div style="font-size: 0.85rem; color: #666;">${new Date(claim.created_at).toLocaleDateString()}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <span class="claim-status ${claim.status === 'complete' ? 'status-complete' : 'status-processing'}">${claim.status.toUpperCase()}</span>
+                                ${claim.pdf_url ? `<a href="${claim.pdf_url}" class="claim-link" target="_blank">Download PDF</a>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Failed to load portal:', err);
+            }
+        }
+    </script>
+</body>
+</html>

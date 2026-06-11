@@ -2,14 +2,16 @@
 
 ## What Was Built
 
-Complete FastAPI backend for Citadel Claims SMS-first insurance estimating service.
+Complete FastAPI backend + frontend for Citadel Claims SMS-first insurance estimating service. Both frontend and backend deployed on **Render**.
 
 ### Project Structure
 ```
 citadel-claims-backend/
 ├── main.py                     # FastAPI app entry point
+├── frontend/
+│   └── index.html              # Landing page, portal, checkout UI
 ├── requirements.txt            # All dependencies
-├── .env                        # Environment variables (fill in your keys)
+├── .env.example                # Environment variables template
 ├── .gitignore
 ├── routers/
 │   ├── sms.py                  # Telnyx webhook handler
@@ -31,20 +33,21 @@ citadel-claims-backend/
 ### API Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| GET | `/` | Serves the landing/portal page |
+| GET | `/success` | Success page after checkout |
 | POST | `/webhook/sms` | Receives inbound SMS from Telnyx |
 | POST | `/webhook/stripe` | Receives Stripe payment events |
 | GET | `/portal/{token}` | Serves client portal data via magic link |
 | POST | `/create-checkout-session` | Creates Stripe checkout session |
 | GET | `/health` | Health check endpoint |
-| GET | `/` | Root endpoint |
 
 ---
 
-## Setup Instructions for Sam
+## Setup Instructions
 
 ### Step 1: Fill in Environment Variables
 
-Edit the `.env` file with your actual API keys:
+Create a `.env` file from the template:
 
 ```env
 # Telnyx (from telnyx.com)
@@ -69,7 +72,6 @@ STRIPE_PRICE_ID=price_...
 
 # App URLs (set after deployment)
 BASE_URL=https://your-backend.onrender.com
-PORTAL_BASE_URL=https://your-frontend.vercel.app
 ALERT_EMAIL=your@email.com
 
 # SendGrid (from sendgrid.com)
@@ -140,18 +142,28 @@ In Supabase Dashboard → Storage → New Bucket:
 1. Create bucket `claim-media` (Public: true)
 2. Create bucket `estimates` (Public: true)
 
-### Step 4: Deploy to Render
+### Step 4: Push to GitHub
 
-1. Push code to GitHub
-2. Go to render.com → New Web Service
-3. Connect GitHub repo
-4. Settings:
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-5. Add all environment variables from `.env`
-6. Deploy
+```bash
+cd citadel-claims-backend
+git add .
+git commit -m "Initial Citadel Claims backend"
+git remote add origin https://github.com/YOUR_USERNAME/citadel-claims.git
+git push -u origin master
+```
 
-### Step 5: Configure Webhooks
+### Step 5: Deploy to Render
+
+1. Go to [render.com](https://render.com) → New Web Service
+2. Connect your GitHub repo
+3. Configure:
+   - **Name**: `citadel-claims`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. Add environment variables from your `.env` file
+5. Deploy
+
+### Step 6: Configure Webhooks
 
 **Telnyx:**
 1. Go to telnyx.com → Messaging → Messaging Profiles
@@ -165,12 +177,14 @@ In Supabase Dashboard → Storage → New Bucket:
 3. Select events: `checkout.session.completed`, `customer.subscription.deleted`
 4. Copy signing secret → add as `STRIPE_WEBHOOK_SECRET`
 
-### Step 6: Update BASE_URL
+### Step 7: Update BASE_URL
 
-After Render deployment, update `.env`:
+After Render deployment, update your `.env`:
 ```env
 BASE_URL=https://your-render-url.onrender.com
 ```
+
+Then push changes and redeploy.
 
 ---
 
@@ -182,19 +196,25 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
+Then visit `http://localhost:8000`
+
 ---
 
 ## Testing the System
 
-1. Text your Telnyx number with "help" - should respond with instructions
-2. Text with "status" - should show claim status
-3. Text with "portal" - should return magic link
-4. Submit photos + voice note - should process claim and return PDF
+1. Visit your Render URL - should show landing page
+2. Fill out checkout form - should redirect to Stripe
+3. Complete payment - should create client and send SMS
+4. Text your Telnyx number with "help" - should respond with instructions
+5. Submit photos + voice note - should process claim and return PDF
 
 ---
 
-## Notes
+## Architecture Notes
 
-- Updated from `google-generativeai` to `google-genai` for latest Gemini SDK
-- Uses `gemini-2.0-flash` model for all AI operations
-- Free tier watchdog sends alerts at 80% and 95% usage
+- Both frontend (HTML/CSS/JS) and backend (FastAPI) deployed on **Render**
+- Frontend is served by FastAPI from the `frontend/` directory
+- All data stored in Supabase (Postgres + Storage)
+- SMS via Telnyx API
+- AI via Groq (primary) + Gemini (fallback)
+- Payments via Stripe
