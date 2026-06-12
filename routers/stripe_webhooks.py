@@ -10,7 +10,7 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 def get_twilio_number() -> str:
     """Get the shared Twilio phone number"""
-    return os.getenv("TWILIO_PHONE_NUMBER", "+12566374466")
+    return os.getenv("TWILIO_PHONE_NUMBER", "") or "+12566374466"
 
 
 @router.post("/webhook/stripe")
