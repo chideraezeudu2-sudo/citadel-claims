@@ -1,6 +1,13 @@
 import os
-from weasyprint import HTML
 from datetime import datetime
+
+# Try to import WeasyPrint, but make it optional
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except ImportError:
+    WEASYPRINT_AVAILABLE = False
+    print("Warning: WeasyPrint not available, PDF generation disabled")
 
 PDF_TEMPLATE = """
 <!DOCTYPE html>
@@ -113,6 +120,12 @@ PDF_TEMPLATE = """
 
 async def generate_pdf(claim_id: str, estimate_text: str, output_path: str) -> str:
     """Generate PDF from estimate text and save to output_path"""
+    if not WEASYPRINT_AVAILABLE:
+        # Return the estimate text as a fallback (no actual PDF)
+        with open(output_path.replace('.pdf', '.txt'), 'w') as f:
+            f.write(f"CLAIM: {claim_id}\nGenerated: {datetime.now()}\n\n{estimate_text}")
+        return output_path
+    
     html_content = PDF_TEMPLATE.format(
         claim_id=claim_id,
         date=datetime.now().strftime("%B %d, %Y at %I:%M %p"),
