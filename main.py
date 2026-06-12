@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import JSONResponse
 from routers import sms, stripe_webhooks, portal
 from dotenv import load_dotenv
 import os
@@ -26,12 +25,12 @@ app.include_router(portal.router)
 
 @app.get("/")
 async def root():
-    return FileResponse("frontend/index.html")
+    return JSONResponse({"message": "Citadel Claims API", "version": "1.0.0"})
 
 
 @app.get("/success")
 async def success():
-    return FileResponse("frontend/index.html")
+    return JSONResponse({"message": "Payment successful!"})
 
 
 @app.get("/health")
