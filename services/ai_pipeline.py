@@ -1,10 +1,10 @@
 import os
 import httpx
-from google import genai
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
-gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 ESTIMATE_PROMPT = """
 You are a professional insurance claims estimator working for Citadel Claims.
@@ -58,18 +58,11 @@ async def transcribe_audio(audio_url: str) -> str:
             response = await http_client.get(audio_url)
             audio_data = response.content
         
-        from google.genai.types import Part
-        audio_part = Part(inline_data={
-            "mime_type": "audio/ogg",
-            "data": audio_data
-        })
-        response = gemini_client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=[
-                "Transcribe this voice note from an insurance adjuster accurately. Include all details mentioned.",
-                audio_part
-            ]
-        )
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content([
+            "Transcribe this voice note from an insurance adjuster accurately. Include all details mentioned.",
+            {"mime_type": "audio/ogg", "data": audio_data}
+        ])
         return response.text
     except Exception as e:
         print(f"Transcription error: {e}")
@@ -79,6 +72,7 @@ async def transcribe_audio(audio_url: str) -> str:
 async def analyze_photos(photo_urls: list) -> list:
     """Analyze each photo and return descriptions"""
     descriptions = []
+    model = genai.GenerativeModel("gemini-1.5-flash")
     
     for url in photo_urls:
         try:
@@ -86,18 +80,10 @@ async def analyze_photos(photo_urls: list) -> list:
                 response = await http_client.get(url)
                 image_data = response.content
             
-            from google.genai.types import Part
-            image_part = Part(inline_data={
-                "mime_type": "image/jpeg",
-                "data": image_data
-            })
-            response = gemini_client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=[
-                    "You are an insurance damage assessor. Describe this photo in detail: what is damaged, the severity, the extent of damage, and what repair or replacement work would be needed. Be specific.",
-                    image_part
-                ]
-            )
+            response = model.generate_content([
+                "You are an insurance damage assessor. Describe this photo in detail: what is damaged, the severity, the extent of damage, and what repair or replacement work would be needed. Be specific.",
+                {"mime_type": "image/jpeg", "data": image_data}
+            ])
             descriptions.append(response.text)
         except Exception as e:
             print(f"Photo analysis error for {url}: {e}")
@@ -112,6 +98,8 @@ async def draft_estimate(
     claim_type: str
 ) -> str:
     """Draft full estimate using Gemini"""
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    
     prompt = ESTIMATE_PROMPT.format(
         transcript=transcript or "No voice note provided.",
         photo_count=len(photo_descriptions),
@@ -119,10 +107,7 @@ async def draft_estimate(
         claim_type=claim_type or "General property claim"
     )
     
-    response = gemini_client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt
-    )
+    response = model.generate_content(prompt)
     return response.text
 
 

@@ -1,13 +1,13 @@
 import os
 import json
 from groq import Groq
-from google import genai
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 INTENT_PROMPT = """
 You are the intent classifier for Citadel Claims, an insurance estimating service.
@@ -44,10 +44,8 @@ async def classify_intent(message: str) -> dict:
     
     # Fallback to Gemini
     try:
-        response = gemini_client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt
-        )
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
         result = response.text.strip()
         return json.loads(result)
     except Exception as gemini_error:

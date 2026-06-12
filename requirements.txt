@@ -1,14 +1,12 @@
 fastapi
-uvicorn
+uvicorn[standard]
 python-dotenv
 supabase
 stripe
-telnyx
 groq
-google-genai
+google-generativeai
 weasyprint
 httpx
 python-multipart
-sendgrid
 Pillow
 aiofiles
