@@ -40,20 +40,40 @@ async def health():
 
 @app.post("/create-checkout-session")
 async def create_checkout_session(request: Request):
-    """Create a Stripe checkout session for subscription"""
+    """Create a Stripe checkout session with setup fee + subscription"""
     stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
     
     body = await request.json()
     phone = body.get("phone", "")
     
+    # Create checkout session with setup fee + subscription
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
         mode="subscription",
-        line_items=[{"price": os.getenv("STRIPE_PRICE_ID"), "quantity": 1}],
-        success_url=f"{os.getenv('BASE_URL')}/success?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{os.getenv('BASE_URL')}",
+        line_items=[
+            {
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {"name": "Citadel Claims Setup Fee"},
+                    "unit_amount": 5000,  # $50.00 one-time
+                },
+                "quantity": 1,
+            },
+            {
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {"name": "Citadel Claims Monthly Subscription"},
+                    "unit_amount": 170000,  # $1,700.00/month
+                    "recurring": {"interval": "month"},
+                },
+                "quantity": 1,
+            },
+        ],
+        success_url=f"{os.getenv('BASE_URL', 'https://citadelclaims.com')}#/success?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{os.getenv('BASE_URL', 'https://citadelclaims.com')}",
         metadata={"phone": phone},
-        phone_number_collection={"enabled": True}
+        phone_number_collection={"enabled": True},
+        allow_promotion_codes=True,
     )
     
     return {"url": session.url}
