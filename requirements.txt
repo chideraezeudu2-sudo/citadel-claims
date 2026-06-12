@@ -5,8 +5,6 @@ supabase
 stripe
 groq
 google-generativeai
-weasyprint[html]>=0.64.0
 httpx
 python-multipart
-Pillow
 aiofiles
